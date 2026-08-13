@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "commonjs",
+    "lib": ["ES2021"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+"allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+"sourceMap": true,
+    "types": ["node", "@playwright/test"],
+"paths": {
+            "@core/fixtures/*": [
+                "./core/fixtures/*"
+            ],
+            "@core/utils/*": [
+                "./core/utils/*"
+            ],
+            "@page-objects/*": [
+                "./page-objects/*"
+            ],
+            "@api/*": [
+                "./core/api/*"
+            ],
+            "@core/constants/*": [
+                "./core/constants/*"
+            ]
+        }
+
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
+}
