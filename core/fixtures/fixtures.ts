@@ -1,11 +1,16 @@
-import { test as base, request as apiRequest } from '@playwright/test';
+import { test as base, request as apiRequest, expect } from '@playwright/test';
 import { LoginPage } from '../../page-objects/LoginPage';
 import { HomePage } from '../../page-objects/HomePage';
 import { CartPage } from '../../page-objects/CartPage';
 import { CheckoutPage } from '../../page-objects/CheckoutPage';
 import { ProfilePage } from '../../page-objects/ProfilePage';
 import { OrdersPage } from '../../page-objects/OrdersPage';
-import { OrdersApi, Product } from '../api/OrdersApi';
+import { OrdersApi, Product, SeededOrder } from '../api/OrdersApi';
+import { uniqueName } from '../utils/unique';
+import seedOrderTestDataJson from '../../data/seedOrderTestData.json';
+import { SeedOrderTestData } from '../../data/seedOrder.data';
+
+const seedOrderData = seedOrderTestDataJson as SeedOrderTestData;
 
 type MyFixtures = {
   loginPage: LoginPage;
@@ -16,6 +21,10 @@ type MyFixtures = {
   ordersPage: OrdersPage;
   primaryProduct: Product;
   secondaryProduct: Product;
+  loggedInHomePage: HomePage;
+  emptyCart: CartPage;
+  /** Creates an order via the API for primaryProduct and deletes it afterwards. */
+  seededOrder: { recipientName: string; order: SeededOrder };
 };
 
 type TestAccount = {
@@ -73,7 +82,7 @@ export const test = base.extend<MyFixtures, WorkerFixtures>({
         baseURL: process.env.BASE_URL,
       });
       const account: TestAccount = {
-        username: `qa.w${workerInfo.workerIndex}.${Date.now()}`,
+        username: uniqueName(`qa.w${workerInfo.workerIndex}`, '.'),
         password: 'QaAutomation@123',
         name: `QA Worker ${workerInfo.workerIndex}`,
       };
@@ -98,6 +107,54 @@ export const test = base.extend<MyFixtures, WorkerFixtures>({
         'Catalog needs at least 2 products to run this test with'
       );
     await use(product);
+  },
+
+  loggedInHomePage: async ({ loginPage, testAccount }, use) => {
+    await loginPage.open();
+    const homePage = await loginPage.login(
+      testAccount.username,
+      testAccount.password
+    );
+    await expect(homePage.page).toHaveURL(/home/);
+    await use(homePage);
+  },
+
+  emptyCart: async ({ loggedInHomePage, cartPage }, use) => {
+    void loggedInHomePage;
+    await cartPage.open();
+    await cartPage.clearCart();
+    await use(cartPage);
+  },
+
+  seededOrder: async ({ request, testAccount, primaryProduct }, use) => {
+    const { token } = await OrdersApi.login(
+      request,
+      testAccount.username,
+      testAccount.password
+    );
+    const ordersApi = new OrdersApi(request, token);
+
+    const recipientName = uniqueName('QA Automation');
+    const order = await ordersApi.createOrder({
+      items: [
+        {
+          productId: primaryProduct.id ?? primaryProduct._id,
+          name: primaryProduct.name,
+          price: primaryProduct.price,
+          quantity: 1,
+          emoji: primaryProduct.emoji,
+        },
+      ],
+      recipientName,
+      recipientPhone: seedOrderData.recipientPhone,
+      address: seedOrderData.address,
+      paymentMethod: seedOrderData.paymentMethod,
+      totalPrice: primaryProduct.price,
+    });
+
+    await use({ recipientName, order });
+
+    await ordersApi.deleteOrder(order.id ?? order._id);
   },
 });
 

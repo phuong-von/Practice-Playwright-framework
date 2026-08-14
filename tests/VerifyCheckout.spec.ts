@@ -1,20 +1,11 @@
-import { test, expect } from '../core/fixtures/fixtures';
+import { test } from '../core/fixtures/fixtures';
 import testDataJson from '../data/testdata.json';
 import { TestData } from '../data/checkout.data';
 
 const checkoutData = testDataJson as TestData;
 
-test.beforeEach(async ({ loginPage, cartPage, testAccount }) => {
-  await loginPage.open();
-  const homePage = await loginPage.login(
-    testAccount.username,
-    testAccount.password
-  );
-  await expect(homePage.page).toHaveURL(/home/);
-  await expect(homePage.headerUsername).toContainText('Xin chào');
-
-  await cartPage.open();
-  await cartPage.clearCart();
+test.beforeEach(async ({ emptyCart }) => {
+  void emptyCart;
 });
 
 test.describe('Checkout process', () => {

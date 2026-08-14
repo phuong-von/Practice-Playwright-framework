@@ -1,13 +1,7 @@
 import { test, expect } from '../core/fixtures/fixtures';
 
-test.beforeEach(async ({ loginPage, testAccount }) => {
-  await loginPage.open();
-  const homePage = await loginPage.login(
-    testAccount.username,
-    testAccount.password
-  );
-  await expect(homePage.page).toHaveURL(/home/);
-  await expect(homePage.headerUsername).toContainText('Xin chào');
+test.beforeEach(async ({ loggedInHomePage }) => {
+  void loggedInHomePage;
 });
 
 test.describe('Profile - Update full name', () => {
